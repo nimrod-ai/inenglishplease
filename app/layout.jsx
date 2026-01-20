@@ -14,7 +14,7 @@ const body = Space_Grotesk({
 });
 
 export const metadata = {
-  title: "No Fluff Business",
+  title: "In English, Please",
   description: "Plain-language business summaries with zero fluff."
 };
 

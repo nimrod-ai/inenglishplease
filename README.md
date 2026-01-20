@@ -1,4 +1,4 @@
-# No Fluff Business
+# In English, Please
 
 Translate a company website into kid-simple language. Scrapes the homepage, About page, and Product/Features page, then runs the text through an LLM to strip the fluff. Includes a chat box for follow-up questions and an MCP server for tool use.
 
@@ -25,6 +25,11 @@ Azure OpenAI:
 - `AZURE_OPENAI_DEPLOYMENT` (required, your deployment name)
 - `AZURE_OPENAI_API_VERSION` (optional, defaults to `2024-02-15-preview`)
 Aliases also work: `OPENAI_API_BASE`, `OPENAI_API_VERSION`, `OPENAI_DEPLOYMENT_NAME`.
+
+Langfuse (optional):
+- `LANGFUSE_PUBLIC_KEY`
+- `LANGFUSE_SECRET_KEY`
+- `LANGFUSE_BASE_URL` (optional, defaults to Langfuse cloud)
 
 ## MCP Server
 

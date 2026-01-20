@@ -101,7 +101,7 @@ export default function Home() {
             Kid-level clarity
           </span>
           <h1 className="font-display text-4xl leading-tight text-ink sm:text-5xl lg:text-6xl">
-            No Fluff Business
+            In English, Please
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-muted sm:text-xl">
             Paste a company URL and get the truth, translated into the language of a
@@ -238,7 +238,7 @@ export default function Home() {
 
         <footer className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs uppercase tracking-[0.2em] text-muted">
           <a
-            href="mailto:nimrodharel1@gmail.com?subject=No%20Fluff%20Business%20contact"
+            href="mailto:nimrodharel1@gmail.com?subject=In%20English%2C%20Please%20contact"
             className="rounded-full border border-line/70 bg-card/80 px-4 py-2 hover:border-accent"
           >
             Email contact
