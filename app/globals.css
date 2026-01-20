@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper: 248 242 232;
+  --ink: 33 29 25;
+  --accent: 241 138 22;
+  --accent-2: 41 146 125;
+  --muted: 110 98 85;
+  --card: 255 248 236;
+  --line: 229 214 196;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  color: rgb(var(--ink));
+  background:
+    radial-gradient(1200px 600px at 8% 12%, rgb(var(--accent) / 0.18), transparent 60%),
+    radial-gradient(900px 500px at 88% 10%, rgb(var(--accent-2) / 0.16), transparent 65%),
+    linear-gradient(180deg, rgb(var(--paper)), rgb(var(--paper) / 0.88));
+}
+
+.grid-overlay {
+  background-image:
+    linear-gradient(90deg, rgb(var(--ink) / 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgb(var(--ink) / 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at top, black 10%, transparent 70%);
+}
+
+::selection {
+  background: rgb(var(--accent) / 0.3);
+}
