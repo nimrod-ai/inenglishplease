@@ -13,7 +13,7 @@ const inputSchema = {
 };
 
 async function handleAnalyze({ url }) {
-  const result = await analyzeCompany(url);
+  const result = await analyzeCompany(url, { userKey: "mcp" });
   return {
     content: [
       {

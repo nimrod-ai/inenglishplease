@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { answerFollowup } from "../../../lib/llm.js";
+import { getClientKey } from "../../../lib/token-limit.js";
 
 export async function POST(request) {
   try {
@@ -13,17 +14,40 @@ export async function POST(request) {
       );
     }
 
+    const userKey = getClientKey(request);
     const answer = await answerFollowup({
       question,
       context: body?.context || "",
-      analysis: body?.analysis || null
+      analysis: body?.analysis || null,
+      userKey
     });
 
     return NextResponse.json({ answer });
   } catch (error) {
+    const status =
+      typeof error.status === "number" && error.status >= 400 && error.status < 600
+        ? error.status
+        : 500;
+    const payload = { error: error.message || "Failed to answer." };
+    if (error.code === "token_limit") {
+      payload.resetAt = error.resetAt;
+      payload.remaining = error.remaining;
+    }
+
     return NextResponse.json(
-      { error: error.message || "Failed to answer." },
-      { status: 500 }
+      payload,
+      {
+        status,
+        headers:
+          error.code === "token_limit" && error.resetAt
+            ? {
+                "Retry-After": Math.max(
+                  1,
+                  Math.ceil((error.resetAt - Date.now()) / 1000)
+                ).toString()
+              }
+            : undefined
+      }
     );
   }
 }

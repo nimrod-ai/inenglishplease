@@ -12,6 +12,12 @@ npm run dev
 
 Open `http://localhost:3000` and paste a company URL.
 
+If a site blocks scraping, the server will fall back to Playwright. Install browsers if needed:
+
+```bash
+npx playwright install
+```
+
 ## Environment
 
 - `OPENAI_PROVIDER` (optional, `openai` or `azure`; defaults to auto-detect)
@@ -30,6 +36,10 @@ Langfuse (optional):
 - `LANGFUSE_PUBLIC_KEY`
 - `LANGFUSE_SECRET_KEY`
 - `LANGFUSE_BASE_URL` (optional, defaults to Langfuse cloud)
+
+Token budget (per IP, optional):
+- `TOKEN_BUDGET_MAX_TOKENS` (per window; set to 0 to disable)
+- `TOKEN_BUDGET_WINDOW_MS` (defaults to 3600000)
 
 ## MCP Server
 
