@@ -27,6 +27,9 @@ export default function Home() {
   const [analysis, setAnalysis] = useState(null);
   const [context, setContext] = useState("");
   const [sources, setSources] = useState([]);
+  const [shareId, setShareId] = useState("");
+  const [shareStatus, setShareStatus] = useState("");
+  const [shareNote, setShareNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [chatInput, setChatInput] = useState("");
@@ -44,6 +47,9 @@ export default function Home() {
     setError("");
     setAnalysis(null);
     setChatMessages([]);
+    setShareId("");
+    setShareStatus("");
+    setShareNote("");
 
     try {
       const response = await fetch("/api/analyze", {
@@ -60,12 +66,37 @@ export default function Home() {
       setAnalysis(data.analysis);
       setContext(data.context || "");
       setSources(data.sources || []);
+      setShareId(data.shareId || "");
+      setShareNote(data.shareReason || "");
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleShareCopy = async () => {
+    if (!shareId) {
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/share/${shareId}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareStatus("Copied");
+    } catch (err) {
+      setShareStatus("Copy failed");
+    }
+  };
+
+  const getShareUrl = () => {
+    if (!shareId) {
+      return "";
+    }
+    return `${window.location.origin}/share/${shareId}`;
+  };
+
+  const shareUrl = typeof window !== "undefined" ? getShareUrl() : "";
 
   const handleChat = async (event) => {
     event.preventDefault();
@@ -213,6 +244,129 @@ export default function Home() {
                 ))}
               </div>
             ) : null}
+
+            <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+              {shareId ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleShareCopy}
+                    title="Copy share link"
+                    aria-label="Copy share link"
+                    className="rounded-full border border-line/70 bg-paper/70 px-3 py-1 uppercase tracking-[0.2em] text-muted hover:border-accent"
+                  >
+                    Copy link
+                  </button>
+                  <a
+                    href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Share on LinkedIn"
+                    aria-label="Share on LinkedIn"
+                    className="rounded-full border border-line/70 bg-paper/70 px-3 py-1 hover:border-accent"
+                  >
+                    <img
+                      src="https://www.linkedin.com/favicon.ico"
+                      alt="LinkedIn"
+                      className="h-4 w-4"
+                    />
+                  </a>
+                  <a
+                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent("In English, Please")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Share on Twitter"
+                    aria-label="Share on Twitter"
+                    className="rounded-full border border-line/70 bg-paper/70 px-3 py-1 hover:border-accent"
+                  >
+                    <img
+                      src="https://twitter.com/favicon.ico"
+                      alt="Twitter"
+                      className="h-4 w-4"
+                    />
+                  </a>
+                  <a
+                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`In English, Please: ${shareUrl}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Share on WhatsApp"
+                    aria-label="Share on WhatsApp"
+                    className="rounded-full border border-line/70 bg-paper/70 px-3 py-1 hover:border-accent"
+                  >
+                    <img
+                      src="https://www.whatsapp.com/favicon.ico"
+                      alt="WhatsApp"
+                      className="h-4 w-4"
+                    />
+                  </a>
+                  {shareStatus ? (
+                    <span
+                      className="uppercase tracking-[0.2em]"
+                      title={shareStatus}
+                    >
+                      {shareStatus}
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled
+                    title="Copy share link"
+                    aria-label="Copy share link"
+                    className="cursor-not-allowed rounded-full border border-line/70 bg-paper/50 px-3 py-1 uppercase tracking-[0.2em] text-muted/70"
+                  >
+                    Copy link
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    title="Share on LinkedIn"
+                    aria-label="Share on LinkedIn"
+                    className="cursor-not-allowed rounded-full border border-line/70 bg-paper/50 px-3 py-1 text-muted/70"
+                  >
+                    <img
+                      src="https://www.linkedin.com/favicon.ico"
+                      alt="LinkedIn"
+                      className="h-4 w-4 opacity-60"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    title="Share on Twitter"
+                    aria-label="Share on Twitter"
+                    className="cursor-not-allowed rounded-full border border-line/70 bg-paper/50 px-3 py-1 text-muted/70"
+                  >
+                    <img
+                      src="https://twitter.com/favicon.ico"
+                      alt="Twitter"
+                      className="h-4 w-4 opacity-60"
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    title="Share on WhatsApp"
+                    aria-label="Share on WhatsApp"
+                    className="cursor-not-allowed rounded-full border border-line/70 bg-paper/50 px-3 py-1 text-muted/70"
+                  >
+                    <img
+                      src="https://www.whatsapp.com/favicon.ico"
+                      alt="WhatsApp"
+                      className="h-4 w-4 opacity-60"
+                    />
+                  </button>
+                  <span
+                    className="uppercase tracking-[0.2em]"
+                    title={shareNote || "Sharing unavailable"}
+                  >
+                    {shareNote || "Sharing unavailable"}
+                  </span>
+                </>
+              )}
+            </div>
           </section>
         ) : null}
 

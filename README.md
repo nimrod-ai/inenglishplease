@@ -30,16 +30,22 @@ Azure OpenAI:
 - `AZURE_OPENAI_API_KEY` (required)
 - `AZURE_OPENAI_DEPLOYMENT` (required, your deployment name)
 - `AZURE_OPENAI_API_VERSION` (optional, defaults to `2024-02-15-preview`)
+- `AZURE_OPENAI_MODEL_NAME` (optional, base model name for cost tracking)
 Aliases also work: `OPENAI_API_BASE`, `OPENAI_API_VERSION`, `OPENAI_DEPLOYMENT_NAME`.
 
 Langfuse (optional):
 - `LANGFUSE_PUBLIC_KEY`
 - `LANGFUSE_SECRET_KEY`
 - `LANGFUSE_BASE_URL` (optional, defaults to Langfuse cloud)
+- `LANGFUSE_MODEL_NAME` (optional, use the base model name for cost tracking)
 
 Token budget (per IP, optional):
 - `TOKEN_BUDGET_MAX_TOKENS` (per window; set to 0 to disable)
 - `TOKEN_BUDGET_WINDOW_MS` (defaults to 3600000)
+
+Cache/share (Render Postgres):
+- `DATABASE_URL` (Render internal or external URL)
+- `CACHE_TTL_DAYS` (defaults to 7)
 
 ## MCP Server
 
