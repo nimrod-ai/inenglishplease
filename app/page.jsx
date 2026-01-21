@@ -11,6 +11,18 @@ const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL || "";
 const BULLET_PREFIX = /^[-*•]\s*/;
 const getFaviconUrl = (domain) =>
   `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+const getCompanyHost = (value) => {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    const normalized = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+    return new URL(normalized).hostname.replace(/^www\./, "");
+  } catch (error) {
+    return value;
+  }
+};
 
 const toBullets = (text) => {
   if (!text) {
@@ -29,6 +41,7 @@ export default function Home() {
   const [analysis, setAnalysis] = useState(null);
   const [context, setContext] = useState("");
   const [sources, setSources] = useState([]);
+  const [companyUrl, setCompanyUrl] = useState("");
   const [shareId, setShareId] = useState("");
   const [shareStatus, setShareStatus] = useState("");
   const [shareNote, setShareNote] = useState("");
@@ -54,13 +67,14 @@ export default function Home() {
     setShareNote("");
 
     try {
-      const response = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() })
-      });
+    const submittedUrl = url.trim();
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: submittedUrl })
+    });
 
-      const data = await response.json();
+    const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Failed to analyze the site.");
       }
@@ -70,6 +84,7 @@ export default function Home() {
       setSources(data.sources || []);
       setShareId(data.shareId || "");
       setShareNote(data.shareReason || "");
+      setCompanyUrl(submittedUrl);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -99,6 +114,10 @@ export default function Home() {
   };
 
   const shareUrl = typeof window !== "undefined" ? getShareUrl() : "";
+  const shareCompanyHost = getCompanyHost(companyUrl || sources[0] || "");
+  const shareMessage = shareCompanyHost
+    ? `I used 'In English, Please' to understand what the company at ${shareCompanyHost} actually does. Check it out:`
+    : "I used 'In English, Please' to understand what a company actually does. Check it out:";
 
   const handleChat = async (event) => {
     event.preventDefault();
@@ -274,7 +293,7 @@ export default function Home() {
                     />
                   </a>
                   <a
-                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent("In English, Please")}`}
+                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareMessage)}`}
                     target="_blank"
                     rel="noreferrer"
                     title="Share on Twitter"
@@ -288,7 +307,7 @@ export default function Home() {
                     />
                   </a>
                   <a
-                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`In English, Please: ${shareUrl}`)}`}
+                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareMessage} ${shareUrl}`)}`}
                     target="_blank"
                     rel="noreferrer"
                     title="Share on WhatsApp"

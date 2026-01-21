@@ -10,6 +10,12 @@ const CARD_DEFS = [
   { key: "claim", icon: "💰", title: "The 'Why'" }
 ];
 const BULLET_PREFIX = /^[-*•]\s*/;
+const toTitleCase = (value) =>
+  value
+    .split(/[\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 
 const toBullets = (text) => {
   if (!text) {
@@ -39,6 +45,9 @@ export default async function SharePage({ params }) {
       sharedHost = "";
     }
   }
+  const hostLabel = sharedHost || result.url || "";
+  const companyName = sharedHost ? toTitleCase(sharedHost.split(".")[0]) : "";
+  const shareLabel = companyName ? `${companyName} (${hostLabel})` : hostLabel;
 
   return (
     <div className="relative min-h-screen overflow-hidden px-6 pb-24 pt-10">
@@ -58,10 +67,10 @@ export default async function SharePage({ params }) {
             In English, Please turns company websites into simple, honest explanations.
           </p>
           {result.url ? (
-            <p className="mt-3 max-w-2xl text-sm text-muted">
+            <p className="mt-3 max-w-2xl text-base font-semibold text-ink sm:text-lg">
               This share is about{" "}
               <a href={result.url} target="_blank" rel="noreferrer" className="underline">
-                {sharedHost || result.url}
+                {shareLabel}
               </a>
               .
             </p>
@@ -71,7 +80,7 @@ export default async function SharePage({ params }) {
               href="/"
               className="rounded-full border border-line/70 bg-card/80 px-4 py-2 hover:border-accent"
             >
-              Back to analyzer
+              Back to In English, Please
             </Link>
             {result.url ? (
               <a
@@ -80,7 +89,7 @@ export default async function SharePage({ params }) {
                 rel="noreferrer"
                 className="rounded-full border border-line/70 bg-card/80 px-4 py-2 hover:border-accent"
               >
-                Original site
+                Move to company website
               </a>
             ) : null}
           </div>
