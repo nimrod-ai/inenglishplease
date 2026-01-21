@@ -9,6 +9,8 @@ const CARD_DEFS = [
 ];
 const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL || "";
 const BULLET_PREFIX = /^[-*•]\s*/;
+const getFaviconUrl = (domain) =>
+  `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
 
 const toBullets = (text) => {
   if (!text) {
@@ -266,7 +268,7 @@ export default function Home() {
                     className="rounded-full border border-line/70 bg-paper/70 px-3 py-1 hover:border-accent"
                   >
                     <img
-                      src="https://www.linkedin.com/favicon.ico"
+                      src={getFaviconUrl("linkedin.com")}
                       alt="LinkedIn"
                       className="h-4 w-4"
                     />
@@ -280,7 +282,7 @@ export default function Home() {
                     className="rounded-full border border-line/70 bg-paper/70 px-3 py-1 hover:border-accent"
                   >
                     <img
-                      src="https://twitter.com/favicon.ico"
+                      src={getFaviconUrl("twitter.com")}
                       alt="Twitter"
                       className="h-4 w-4"
                     />
@@ -294,7 +296,7 @@ export default function Home() {
                     className="rounded-full border border-line/70 bg-paper/70 px-3 py-1 hover:border-accent"
                   >
                     <img
-                      src="https://www.whatsapp.com/favicon.ico"
+                      src={getFaviconUrl("whatsapp.com")}
                       alt="WhatsApp"
                       className="h-4 w-4"
                     />
@@ -327,7 +329,7 @@ export default function Home() {
                     className="cursor-not-allowed rounded-full border border-line/70 bg-paper/50 px-3 py-1 text-muted/70"
                   >
                     <img
-                      src="https://www.linkedin.com/favicon.ico"
+                      src={getFaviconUrl("linkedin.com")}
                       alt="LinkedIn"
                       className="h-4 w-4 opacity-60"
                     />
@@ -340,7 +342,7 @@ export default function Home() {
                     className="cursor-not-allowed rounded-full border border-line/70 bg-paper/50 px-3 py-1 text-muted/70"
                   >
                     <img
-                      src="https://twitter.com/favicon.ico"
+                      src={getFaviconUrl("twitter.com")}
                       alt="Twitter"
                       className="h-4 w-4 opacity-60"
                     />
@@ -353,7 +355,7 @@ export default function Home() {
                     className="cursor-not-allowed rounded-full border border-line/70 bg-paper/50 px-3 py-1 text-muted/70"
                   >
                     <img
-                      src="https://www.whatsapp.com/favicon.ico"
+                      src={getFaviconUrl("whatsapp.com")}
                       alt="WhatsApp"
                       className="h-4 w-4 opacity-60"
                     />

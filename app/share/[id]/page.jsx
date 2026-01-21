@@ -31,6 +31,14 @@ export default async function SharePage({ params }) {
 
   const analysis = result.analysis || {};
   const sources = Array.isArray(result.sources) ? result.sources : [];
+  let sharedHost = "";
+  if (result.url) {
+    try {
+      sharedHost = new URL(result.url).hostname.replace(/^www\./, "");
+    } catch (error) {
+      sharedHost = "";
+    }
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden px-6 pb-24 pt-10">
@@ -47,8 +55,17 @@ export default async function SharePage({ params }) {
             In English, Please
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-muted sm:text-xl">
-            A shared snapshot of the company story, stripped of fluff.
+            In English, Please turns company websites into simple, honest explanations.
           </p>
+          {result.url ? (
+            <p className="mt-3 max-w-2xl text-sm text-muted">
+              This share is about{" "}
+              <a href={result.url} target="_blank" rel="noreferrer" className="underline">
+                {sharedHost || result.url}
+              </a>
+              .
+            </p>
+          ) : null}
           <div className="mt-4 flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-muted">
             <Link
               href="/"
