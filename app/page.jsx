@@ -157,9 +157,20 @@ export default function Home() {
           <section className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-display text-2xl text-ink">The simple truth</h2>
-              <span className="rounded-full border border-line/70 bg-card/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-muted">
-                Fluff rating: {analysis.fluff_rating || "?"}/10
-              </span>
+              <div className="relative">
+                <span
+                  className="group inline-flex items-center gap-2 rounded-full border border-line/70 bg-card/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-muted"
+                  tabIndex={0}
+                  role="button"
+                  aria-label="Fluff rating explanation"
+                >
+                  Fluff rating: {analysis.fluff_rating || "?"}/10
+                  <span className="text-sm">ⓘ</span>
+                  <span className="pointer-events-none absolute right-0 top-0 z-10 w-64 -translate-y-full rounded-2xl border border-line/70 bg-paper px-3 py-2 text-[11px] normal-case tracking-normal text-ink opacity-0 shadow-soft transition group-hover:opacity-100 group-focus:opacity-100">
+                    High = lots of fluff and buzzwords. Low = plain, direct language.
+                  </span>
+                </span>
+              </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-3">
