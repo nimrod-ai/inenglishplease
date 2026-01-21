@@ -8,6 +8,19 @@ const CARD_DEFS = [
   { key: "claim", icon: "💰", title: "The 'Why'" }
 ];
 const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL || "";
+const BULLET_PREFIX = /^[-*•]\s*/;
+
+const toBullets = (text) => {
+  if (!text) {
+    return [];
+  }
+
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.replace(BULLET_PREFIX, ""));
+};
 
 export default function Home() {
   const [url, setUrl] = useState("");
@@ -160,9 +173,15 @@ export default function Home() {
                     <span className="text-lg">{card.icon}</span>
                     {card.title}
                   </div>
-                  <p className="text-base text-ink">
-                    {analysis[card.key] || "No clear answer yet."}
-                  </p>
+                  {analysis[card.key] ? (
+                    <ul className="list-disc space-y-2 pl-5 text-base text-ink">
+                      {toBullets(analysis[card.key]).map((line, lineIndex) => (
+                        <li key={`${card.key}-${lineIndex}`}>{line}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-base text-ink">No clear answer yet.</p>
+                  )}
                 </article>
               ))}
             </div>
@@ -211,7 +230,15 @@ export default function Home() {
                         : "mr-auto bg-card text-ink"
                     }`}
                   >
-                    {message.text}
+                    {message.role === "assistant" ? (
+                      <ul className="list-disc space-y-2 pl-5">
+                        {toBullets(message.text).map((line, lineIndex) => (
+                          <li key={`${message.role}-${index}-${lineIndex}`}>{line}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      message.text
+                    )}
                   </div>
                 ))}
               </div>
