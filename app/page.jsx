@@ -42,6 +42,7 @@ export default function Home() {
   const [context, setContext] = useState("");
   const [sources, setSources] = useState([]);
   const [companyUrl, setCompanyUrl] = useState("");
+  const [showFluffHelp, setShowFluffHelp] = useState(false);
   const [shareId, setShareId] = useState("");
   const [shareStatus, setShareStatus] = useState("");
   const [shareNote, setShareNote] = useState("");
@@ -62,6 +63,7 @@ export default function Home() {
     setError("");
     setAnalysis(null);
     setChatMessages([]);
+    setShowFluffHelp(false);
     setShareId("");
     setShareStatus("");
     setShareNote("");
@@ -210,18 +212,25 @@ export default function Home() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-display text-2xl text-ink">The simple truth</h2>
               <div className="relative">
-                <span
+                <button
+                  type="button"
                   className="group inline-flex items-center gap-2 rounded-full border border-line/70 bg-card/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-muted"
-                  tabIndex={0}
-                  role="button"
                   aria-label="Fluff rating explanation"
+                  aria-expanded={showFluffHelp}
+                  aria-describedby="fluff-help"
+                  onClick={() => setShowFluffHelp((prev) => !prev)}
+                  onBlur={() => setShowFluffHelp(false)}
                 >
                   Fluff rating: {analysis.fluff_rating || "?"}/10
                   <span className="text-sm">ⓘ</span>
-                  <span className="pointer-events-none absolute right-0 top-0 z-10 w-64 -translate-y-full rounded-2xl border border-line/70 bg-paper px-3 py-2 text-[11px] normal-case tracking-normal text-ink opacity-0 shadow-soft transition group-hover:opacity-100 group-focus:opacity-100">
+                  <span
+                    id="fluff-help"
+                    data-open={showFluffHelp}
+                    className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 max-w-[calc(100vw-2.5rem)] rounded-2xl border border-line/70 bg-paper px-3 py-2 text-xs normal-case tracking-normal text-ink opacity-0 shadow-soft transition data-[open=true]:opacity-100 sm:left-auto sm:right-0 sm:top-0 sm:mt-0 sm:w-64 sm:-translate-y-full sm:text-[11px] sm:group-hover:opacity-100 sm:group-focus:opacity-100"
+                  >
                     High = lots of fluff and buzzwords. Low = plain, direct language.
                   </span>
-                </span>
+                </button>
               </div>
             </div>
 
