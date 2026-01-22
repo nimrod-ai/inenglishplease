@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const CARD_DEFS = [
   { key: "product", icon: "📦", title: "What they sell" },
@@ -27,6 +27,17 @@ const getCompanyHost = (value) => {
   } catch (error) {
     return value;
   }
+};
+const formatCompanyCount = (total) => {
+  if (!Number.isFinite(total) || total <= 0) {
+    return "0 companies";
+  }
+  const step = total >= 100 ? 100 : 10;
+  const rounded = Math.floor(total / step) * step;
+  if (rounded <= 0) {
+    return `${total}+ companies`;
+  }
+  return `${rounded}+ companies`;
 };
 
 const toBullets = (text) => {
@@ -66,6 +77,26 @@ export default function Home() {
   const [jobChatMessages, setJobChatMessages] = useState([]);
   const [jobChatLoading, setJobChatLoading] = useState(false);
   const [jobLoading, setJobLoading] = useState(false);
+  const [recentCompanies, setRecentCompanies] = useState([]);
+  const [recentTotal, setRecentTotal] = useState(0);
+
+  const loadRecent = async () => {
+    try {
+      const response = await fetch("/api/recent", { cache: "no-store" });
+      if (!response.ok) {
+        return;
+      }
+      const data = await response.json();
+      setRecentCompanies(Array.isArray(data.items) ? data.items : []);
+      setRecentTotal(typeof data.total === "number" ? data.total : 0);
+    } catch (error) {
+      // Ignore fetch errors to avoid blocking the UI.
+    }
+  };
+
+  useEffect(() => {
+    loadRecent();
+  }, []);
 
   const handleModeChange = (nextMode) => {
     setMode(nextMode);
@@ -124,6 +155,7 @@ export default function Home() {
       setShareId(data.shareId || "");
       setShareNote(data.shareReason || "");
       setCompanyUrl(submittedUrl);
+      loadRecent();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -354,6 +386,10 @@ export default function Home() {
                 placeholder="Paste the job post link..."
                 className="h-12 w-full rounded-2xl border border-line/80 bg-paper/80 px-4 text-base text-ink shadow-inner outline-none transition focus:border-accent"
               />
+              <p className="text-xs text-muted">
+                LinkedIn and some job boards block scraping. If it fails, paste the
+                description below.
+              </p>
               <details className="rounded-2xl border border-line/70 bg-paper/60 px-4 py-3">
                 <summary className="cursor-pointer text-xs uppercase tracking-[0.2em] text-muted">
                   Or paste the description
@@ -743,6 +779,43 @@ export default function Home() {
                   {chatLoading ? "Thinking..." : "Ask"}
                 </button>
               </form>
+            </div>
+          </section>
+        ) : null}
+
+        {recentCompanies.length ? (
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="font-display text-xl text-ink">Recently analyzed</h3>
+              <div className="flex items-center gap-3">
+                <span className="text-xs uppercase tracking-[0.2em] text-muted">
+                  {formatCompanyCount(recentTotal)}
+                </span>
+                <a
+                  href="/companies"
+                  className="rounded-full border border-line/70 bg-card/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-muted hover:border-accent"
+                >
+                  See all companies
+                </a>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs text-muted">
+              {recentCompanies.map((company) => (
+                <a
+                  key={`${company.url}-${company.created_at}`}
+                  href={company.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 rounded-full border border-line/70 bg-paper/70 px-3 py-1 hover:border-accent"
+                >
+                  <span className="uppercase tracking-[0.2em] text-muted">
+                    {company.host || company.url}
+                  </span>
+                  <span className="text-ink">
+                    {company.fluff_rating ? `Fluff ${company.fluff_rating}/10` : "Fluff ?"}
+                  </span>
+                </a>
+              ))}
             </div>
           </section>
         ) : null}
