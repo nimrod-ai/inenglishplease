@@ -28,16 +28,31 @@ const getCompanyHost = (value) => {
     return value;
   }
 };
-const formatCompanyCount = (total) => {
+const getJobLabel = (value) => {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^www\./, "");
+    const parts = url.pathname.split("/").filter(Boolean);
+    const tail = parts[parts.length - 1];
+    return tail ? `${host}/${tail}` : host;
+  } catch (error) {
+    return value;
+  }
+};
+const formatCount = (total, label) => {
   if (!Number.isFinite(total) || total <= 0) {
-    return "0 companies";
+    return `0 ${label}`;
   }
   const step = total >= 100 ? 100 : 10;
   const rounded = Math.floor(total / step) * step;
   if (rounded <= 0) {
-    return `${total}+ companies`;
+    return `${total}+ ${label}`;
   }
-  return `${rounded}+ companies`;
+  return `${rounded}+ ${label}`;
 };
 
 const toBullets = (text) => {
@@ -79,6 +94,8 @@ export default function Home() {
   const [jobLoading, setJobLoading] = useState(false);
   const [recentCompanies, setRecentCompanies] = useState([]);
   const [recentTotal, setRecentTotal] = useState(0);
+  const [recentJobs, setRecentJobs] = useState([]);
+  const [recentJobsTotal, setRecentJobsTotal] = useState(0);
 
   const loadRecent = async () => {
     try {
@@ -94,9 +111,29 @@ export default function Home() {
     }
   };
 
+  const loadRecentJobs = async () => {
+    try {
+      const response = await fetch("/api/jobs", { cache: "no-store" });
+      if (!response.ok) {
+        return;
+      }
+      const data = await response.json();
+      setRecentJobs(Array.isArray(data.items) ? data.items : []);
+      setRecentJobsTotal(typeof data.total === "number" ? data.total : 0);
+    } catch (error) {
+      // Ignore fetch errors to avoid blocking the UI.
+    }
+  };
+
   useEffect(() => {
     loadRecent();
   }, []);
+
+  useEffect(() => {
+    if (mode === "job") {
+      loadRecentJobs();
+    }
+  }, [mode]);
 
   const handleModeChange = (nextMode) => {
     setMode(nextMode);
@@ -193,6 +230,7 @@ export default function Home() {
 
       setJobAnalysis(data.analysis);
       setJobContext(data.context || "");
+      loadRecentJobs();
     } catch (err) {
       setJobError(err.message);
     } finally {
@@ -342,6 +380,7 @@ export default function Home() {
         {mode === "company" ? (
           <form
             onSubmit={handleAnalyze}
+            noValidate
             className="animate-rise rounded-3xl border border-line/70 bg-card/80 p-6 shadow-soft backdrop-blur"
           >
             <label className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
@@ -349,7 +388,8 @@ export default function Home() {
             </label>
             <div className="mt-4 flex flex-col gap-4 sm:flex-row">
               <input
-                type="url"
+                type="text"
+                inputMode="url"
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
                 placeholder="https://company.com"
@@ -373,6 +413,7 @@ export default function Home() {
         ) : (
           <form
             onSubmit={handleJobAnalyze}
+            noValidate
             className="animate-rise rounded-3xl border border-line/70 bg-card/80 p-6 shadow-soft backdrop-blur"
           >
             <label className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
@@ -380,7 +421,8 @@ export default function Home() {
             </label>
             <div className="mt-4 flex flex-col gap-4">
               <input
-                type="url"
+                type="text"
+                inputMode="url"
                 value={jobUrl}
                 onChange={(event) => setJobUrl(event.target.value)}
                 placeholder="Paste the job post link..."
@@ -789,7 +831,7 @@ export default function Home() {
               <h3 className="font-display text-xl text-ink">Recently analyzed</h3>
               <div className="flex items-center gap-3">
                 <span className="text-xs uppercase tracking-[0.2em] text-muted">
-                  {formatCompanyCount(recentTotal)}
+                  {formatCount(recentTotal, "companies")}
                 </span>
                 <a
                   href="/companies"
@@ -802,10 +844,8 @@ export default function Home() {
             <div className="flex flex-wrap gap-3 text-xs text-muted">
               {recentCompanies.map((company) => (
                 <a
-                  key={`${company.url}-${company.created_at}`}
-                  href={company.url}
-                  target="_blank"
-                  rel="noreferrer"
+                  key={company.id || `${company.url}-${company.created_at}`}
+                  href={company.id ? `/share/${company.id}` : company.url}
                   className="flex items-center gap-2 rounded-full border border-line/70 bg-paper/70 px-3 py-1 hover:border-accent"
                 >
                   <span className="uppercase tracking-[0.2em] text-muted">
@@ -813,6 +853,43 @@ export default function Home() {
                   </span>
                   <span className="text-ink">
                     {company.fluff_rating ? `Fluff ${company.fluff_rating}/10` : "Fluff ?"}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {mode === "job" && recentJobs.length ? (
+          <section className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="font-display text-xl text-ink">Recently analyzed jobs</h3>
+              <div className="flex items-center gap-3">
+                <span className="text-xs uppercase tracking-[0.2em] text-muted">
+                  {formatCount(recentJobsTotal, "jobs")}
+                </span>
+                <a
+                  href="/jobs"
+                  className="rounded-full border border-line/70 bg-card/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-muted hover:border-accent"
+                >
+                  See all jobs
+                </a>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs text-muted">
+              {recentJobs.map((job) => (
+                <a
+                  key={`${job.url}-${job.created_at}`}
+                  href={job.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-2 rounded-full border border-line/70 bg-paper/70 px-3 py-1 hover:border-accent"
+                >
+                  <span className="uppercase tracking-[0.2em] text-muted">
+                    {getJobLabel(job.url)}
+                  </span>
+                  <span className="text-ink">
+                    {job.fluff_rating ? `Fluff ${job.fluff_rating}/10` : "Fluff ?"}
                   </span>
                 </a>
               ))}

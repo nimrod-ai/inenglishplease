@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { simplifyJobDescription } from "../../../lib/llm.js";
 import { scrapeJobPage } from "../../../lib/scrape.js";
+import { normalizeUrlKey, storeJobResult } from "../../../lib/cache.js";
+import { stripPromptInjections } from "../../../lib/sanitize.js";
 import {
   consumeTokens,
   estimateTokensFromText,
@@ -109,6 +111,14 @@ export async function POST(request) {
       }
     }
 
+    const sanitizedText = stripPromptInjections(text);
+    if (!sanitizedText) {
+      return NextResponse.json(
+        { error: "Job description looks unsafe or empty. Paste a clean description." },
+        { status: 400 }
+      );
+    }
+
     if (langfuse) {
       trace = langfuse.trace({
         name: "analyze_job",
@@ -127,8 +137,13 @@ export async function POST(request) {
       });
     }
 
-    const analysis = await simplifyJobDescription(text, { trace });
-    return NextResponse.json({ analysis, source: sourceUrl, context: text });
+    const analysis = await simplifyJobDescription(sanitizedText, { trace });
+    const finalUrl = sourceUrl || url || "";
+    const urlKey = finalUrl ? normalizeUrlKey(finalUrl) : null;
+    if (urlKey) {
+      await storeJobResult({ url: finalUrl, urlKey, analysis, context: sanitizedText });
+    }
+    return NextResponse.json({ analysis, source: sourceUrl, context: sanitizedText });
   } catch (error) {
     const status =
       typeof error.status === "number" && error.status >= 400 && error.status < 600
