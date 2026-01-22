@@ -75,3 +75,7 @@ Tool definition (matches the server):
 ```
 
 An alias tool called `analyze_company` is also registered for compatibility with the prompt.
+
+## License
+
+MIT

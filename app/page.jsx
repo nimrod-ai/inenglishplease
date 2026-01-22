@@ -7,6 +7,11 @@ const CARD_DEFS = [
   { key: "buyer", icon: "👤", title: "Who buys it" },
   { key: "claim", icon: "💰", title: "The 'Why'" }
 ];
+const JOB_CARD_DEFS = [
+  { key: "company_team", icon: "🏢", title: "What the company/team does" },
+  { key: "you_will_do", icon: "🧭", title: "What you will do" },
+  { key: "requirements", icon: "✅", title: "Requirements" }
+];
 const REPO_URL = process.env.NEXT_PUBLIC_REPO_URL || "";
 const BULLET_PREFIX = /^[-*•]\s*/;
 const getFaviconUrl = (domain) =>
@@ -35,22 +40,54 @@ const toBullets = (text) => {
     .filter(Boolean)
     .map((line) => line.replace(BULLET_PREFIX, ""));
 };
-
 export default function Home() {
+  const [mode, setMode] = useState("company");
   const [url, setUrl] = useState("");
   const [analysis, setAnalysis] = useState(null);
   const [context, setContext] = useState("");
   const [sources, setSources] = useState([]);
   const [companyUrl, setCompanyUrl] = useState("");
   const [showFluffHelp, setShowFluffHelp] = useState(false);
+  const [showJobFluffHelp, setShowJobFluffHelp] = useState(false);
+  const [jobUrl, setJobUrl] = useState("");
+  const [jobText, setJobText] = useState("");
+  const [jobAnalysis, setJobAnalysis] = useState(null);
+  const [jobContext, setJobContext] = useState("");
   const [shareId, setShareId] = useState("");
   const [shareStatus, setShareStatus] = useState("");
   const [shareNote, setShareNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [jobError, setJobError] = useState("");
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [jobChatInput, setJobChatInput] = useState("");
+  const [jobChatMessages, setJobChatMessages] = useState([]);
+  const [jobChatLoading, setJobChatLoading] = useState(false);
+  const [jobLoading, setJobLoading] = useState(false);
+
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode);
+    setError("");
+    setJobError("");
+    setLoading(false);
+    setJobLoading(false);
+    setAnalysis(null);
+    setJobAnalysis(null);
+    setChatMessages([]);
+    setChatInput("");
+    setJobChatMessages([]);
+    setJobChatInput("");
+    setShowFluffHelp(false);
+    setShowJobFluffHelp(false);
+    setShareId("");
+    setShareStatus("");
+    setShareNote("");
+    setJobUrl("");
+    setJobText("");
+    setJobContext("");
+  };
 
   const handleAnalyze = async (event) => {
     event.preventDefault();
@@ -69,14 +106,14 @@ export default function Home() {
     setShareNote("");
 
     try {
-    const submittedUrl = url.trim();
-    const response = await fetch("/api/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: submittedUrl })
-    });
+      const submittedUrl = url.trim();
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: submittedUrl })
+      });
 
-    const data = await response.json();
+      const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "Failed to analyze the site.");
       }
@@ -91,6 +128,78 @@ export default function Home() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleJobAnalyze = async (event) => {
+    event.preventDefault();
+    const trimmedText = jobText.trim();
+    const trimmedUrl = jobUrl.trim();
+    if (!trimmedText && !trimmedUrl) {
+      setJobError("Paste a job link or description first.");
+      return;
+    }
+
+    setJobLoading(true);
+    setJobError("");
+    setJobAnalysis(null);
+    setJobChatMessages([]);
+    setJobChatInput("");
+    setShowJobFluffHelp(false);
+
+    try {
+      const response = await fetch("/api/job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: trimmedUrl, text: trimmedText })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to analyze the job.");
+      }
+
+      setJobAnalysis(data.analysis);
+      setJobContext(data.context || "");
+    } catch (err) {
+      setJobError(err.message);
+    } finally {
+      setJobLoading(false);
+    }
+  };
+
+  const handleJobChat = async (event) => {
+    event.preventDefault();
+    if (!jobChatInput.trim() || jobChatLoading) {
+      return;
+    }
+
+    const question = jobChatInput.trim();
+    setJobChatInput("");
+    setJobChatMessages((prev) => [...prev, { role: "user", text: question }]);
+    setJobChatLoading(true);
+
+    try {
+      const response = await fetch("/api/job-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, context: jobContext, analysis: jobAnalysis })
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to answer.");
+      }
+
+      setJobChatMessages((prev) => [...prev, { role: "assistant", text: data.answer }]);
+    } catch (err) {
+      setJobChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: "I couldn't answer that yet. Try again." }
+      ]);
+      setJobError(err.message);
+    } finally {
+      setJobChatLoading(false);
     }
   };
 
@@ -171,43 +280,112 @@ export default function Home() {
             In English, Please
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-muted sm:text-xl">
-            Paste a company URL and get the truth, translated into the language of a
-            five-year-old.
+            {mode === "company"
+              ? "Paste a company URL and get the truth, translated into the language of a five-year-old."
+              : "Paste a job post link or description and get the plain-English version without fluff."}
           </p>
         </header>
 
-        <form
-          onSubmit={handleAnalyze}
-          className="animate-rise rounded-3xl border border-line/70 bg-card/80 p-6 shadow-soft backdrop-blur"
-        >
-          <label className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
-            Company website
-          </label>
-          <div className="mt-4 flex flex-col gap-4 sm:flex-row">
-            <input
-              type="url"
-              value={url}
-              onChange={(event) => setUrl(event.target.value)}
-              placeholder="https://company.com"
-              className="h-12 flex-1 rounded-2xl border border-line/80 bg-paper/80 px-4 text-base text-ink shadow-inner outline-none transition focus:border-accent"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="h-12 rounded-2xl bg-ink px-6 text-sm font-semibold uppercase tracking-[0.2em] text-paper transition hover:-translate-y-0.5 hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {loading ? "Scraping..." : "Tell me the truth"}
-            </button>
-          </div>
-          {error ? (
-            <p className="mt-3 text-sm text-red-700">{error}</p>
-          ) : null}
-          <p className="mt-4 text-xs text-muted">
-            We grab the homepage, the About page, and the Product/Features page.
-          </p>
-        </form>
+        <div className="inline-flex w-full max-w-sm rounded-full border border-line/70 bg-card/70 p-1 text-xs uppercase tracking-[0.2em] text-muted">
+          <button
+            type="button"
+            onClick={() => handleModeChange("company")}
+            className={`flex-1 rounded-full px-4 py-2 transition ${
+              mode === "company" ? "bg-ink text-paper" : "hover:bg-card/90"
+            }`}
+          >
+            Company
+          </button>
+          <button
+            type="button"
+            onClick={() => handleModeChange("job")}
+            className={`flex-1 rounded-full px-4 py-2 transition ${
+              mode === "job" ? "bg-ink text-paper" : "hover:bg-card/90"
+            }`}
+          >
+            Job
+          </button>
+        </div>
 
-        {analysis ? (
+        {mode === "company" ? (
+          <form
+            onSubmit={handleAnalyze}
+            className="animate-rise rounded-3xl border border-line/70 bg-card/80 p-6 shadow-soft backdrop-blur"
+          >
+            <label className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+              Company website
+            </label>
+            <div className="mt-4 flex flex-col gap-4 sm:flex-row">
+              <input
+                type="url"
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                placeholder="https://company.com"
+                className="h-12 flex-1 rounded-2xl border border-line/80 bg-paper/80 px-4 text-base text-ink shadow-inner outline-none transition focus:border-accent"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="h-12 rounded-2xl bg-ink px-6 text-sm font-semibold uppercase tracking-[0.2em] text-paper transition hover:-translate-y-0.5 hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loading ? "Scraping..." : "Tell me the truth"}
+              </button>
+            </div>
+            {error ? (
+              <p className="mt-3 text-sm text-red-700">{error}</p>
+            ) : null}
+            <p className="mt-4 text-xs text-muted">
+              We grab the homepage, the About page, and the Product/Features page.
+            </p>
+          </form>
+        ) : (
+          <form
+            onSubmit={handleJobAnalyze}
+            className="animate-rise rounded-3xl border border-line/70 bg-card/80 p-6 shadow-soft backdrop-blur"
+          >
+            <label className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">
+              Job post link
+            </label>
+            <div className="mt-4 flex flex-col gap-4">
+              <input
+                type="url"
+                value={jobUrl}
+                onChange={(event) => setJobUrl(event.target.value)}
+                placeholder="Paste the job post link..."
+                className="h-12 w-full rounded-2xl border border-line/80 bg-paper/80 px-4 text-base text-ink shadow-inner outline-none transition focus:border-accent"
+              />
+              <details className="rounded-2xl border border-line/70 bg-paper/60 px-4 py-3">
+                <summary className="cursor-pointer text-xs uppercase tracking-[0.2em] text-muted">
+                  Or paste the description
+                </summary>
+                <div className="mt-3">
+                  <textarea
+                    value={jobText}
+                    onChange={(event) => setJobText(event.target.value)}
+                    placeholder="Paste the full job description here..."
+                    rows={6}
+                    className="w-full rounded-2xl border border-line/80 bg-paper/80 px-4 py-3 text-base text-ink shadow-inner outline-none transition focus:border-accent"
+                  />
+                </div>
+              </details>
+              <button
+                type="submit"
+                disabled={jobLoading}
+                className="h-12 rounded-2xl bg-ink px-6 text-sm font-semibold uppercase tracking-[0.2em] text-paper transition hover:-translate-y-0.5 hover:bg-ink/90 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {jobLoading ? "Scraping..." : "Tell me the truth"}
+              </button>
+            </div>
+            {jobError ? (
+              <p className="mt-3 text-sm text-red-700">{jobError}</p>
+            ) : null}
+            <p className="mt-4 text-xs text-muted">
+              We strip buzzwords and keep only what the role really asks for.
+            </p>
+          </form>
+        )}
+
+        {mode === "company" && analysis ? (
           <section className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-display text-2xl text-ink">The simple truth</h2>
@@ -400,7 +578,118 @@ export default function Home() {
           </section>
         ) : null}
 
-        {analysis ? (
+        {mode === "job" && jobAnalysis ? (
+          <section className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-2xl text-ink">The simple truth</h2>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="group inline-flex items-center gap-2 rounded-full border border-line/70 bg-card/80 px-4 py-2 text-xs uppercase tracking-[0.2em] text-muted"
+                  aria-label="Fluff rating explanation"
+                  aria-expanded={showJobFluffHelp}
+                  aria-describedby="job-fluff-help"
+                  onClick={() => setShowJobFluffHelp((prev) => !prev)}
+                  onBlur={() => setShowJobFluffHelp(false)}
+                >
+                  Fluff rating: {jobAnalysis.fluff_rating || "?"}/10
+                  <span className="text-sm">ⓘ</span>
+                  <span
+                    id="job-fluff-help"
+                    data-open={showJobFluffHelp}
+                    className="pointer-events-none absolute left-0 top-full z-10 mt-2 w-64 max-w-[calc(100vw-2.5rem)] rounded-2xl border border-line/70 bg-paper px-3 py-2 text-xs normal-case tracking-normal text-ink opacity-0 shadow-soft transition data-[open=true]:opacity-100 sm:left-auto sm:right-0 sm:top-0 sm:mt-0 sm:w-64 sm:-translate-y-full sm:text-[11px] sm:group-hover:opacity-100 sm:group-focus:opacity-100"
+                  >
+                    High = lots of fluff and buzzwords. Low = plain, direct language.
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              {JOB_CARD_DEFS.map((card, index) => (
+                <article
+                  key={card.key}
+                  className="animate-rise rounded-3xl border border-line/70 bg-card/90 p-5 shadow-crisp"
+                  style={{ animationDelay: `${index * 120}ms` }}
+                >
+                  <div className="mb-3 flex items-center gap-2 text-sm uppercase tracking-[0.2em] text-muted">
+                    <span className="text-lg">{card.icon}</span>
+                    {card.title}
+                  </div>
+                  {jobAnalysis[card.key] ? (
+                    <ul className="list-disc space-y-2 pl-5 text-base text-ink">
+                      {toBullets(jobAnalysis[card.key]).map((line, lineIndex) => (
+                        <li key={`${card.key}-${lineIndex}`}>{line}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-base text-ink">No clear answer yet.</p>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {mode === "job" && jobAnalysis ? (
+          <section className="animate-rise rounded-3xl border border-line/70 bg-card/90 p-6 shadow-soft">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h3 className="font-display text-xl text-ink">Ask follow-up questions</h3>
+              <span className="text-xs uppercase tracking-[0.2em] text-muted">
+                Keep it simple
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              <div className="max-h-72 space-y-3 overflow-y-auto rounded-2xl border border-line/60 bg-paper/70 p-4">
+                {jobChatMessages.length === 0 ? (
+                  <p className="text-sm text-muted">
+                    Try: &quot;What is the day-to-day?&quot; or &quot;Is this senior?&quot;
+                  </p>
+                ) : null}
+                {jobChatMessages.map((message, index) => (
+                  <div
+                    key={`${message.role}-${index}`}
+                    className={`rounded-2xl px-4 py-3 text-sm ${
+                      message.role === "user"
+                        ? "ml-auto bg-ink text-paper"
+                        : "mr-auto bg-card text-ink"
+                    }`}
+                  >
+                    {message.role === "assistant" ? (
+                      <ul className="list-disc space-y-2 pl-5">
+                        {toBullets(message.text).map((line, lineIndex) => (
+                          <li key={`${message.role}-${index}-${lineIndex}`}>{line}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      message.text
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <form onSubmit={handleJobChat} className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="text"
+                  value={jobChatInput}
+                  onChange={(event) => setJobChatInput(event.target.value)}
+                  placeholder="Ask about the role..."
+                  className="h-11 flex-1 rounded-2xl border border-line/80 bg-paper/80 px-4 text-sm text-ink outline-none focus:border-accent"
+                />
+                <button
+                  type="submit"
+                  disabled={jobChatLoading}
+                  className="h-11 rounded-2xl bg-accent px-6 text-xs font-semibold uppercase tracking-[0.2em] text-paper transition hover:-translate-y-0.5 hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {jobChatLoading ? "Thinking..." : "Ask"}
+                </button>
+              </form>
+            </div>
+          </section>
+        ) : null}
+
+        {mode === "company" && analysis ? (
           <section className="animate-rise rounded-3xl border border-line/70 bg-card/90 p-6 shadow-soft">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <h3 className="font-display text-xl text-ink">Ask follow-up questions</h3>
@@ -459,20 +748,63 @@ export default function Home() {
         ) : null}
 
         <footer className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs uppercase tracking-[0.2em] text-muted">
-          <a
-            href="mailto:nimrodharel1@gmail.com?subject=In%20English%2C%20Please%20contact"
-            className="rounded-full border border-line/70 bg-card/80 px-4 py-2 hover:border-accent"
-          >
-            Email contact
-          </a>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs uppercase tracking-[0.2em] text-muted">Made by</span>
+            <a
+              href="https://x.com/harel_nimrod"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-line/70 bg-card/80 px-3 py-2 hover:border-accent"
+              title="Twitter/X"
+              aria-label="Twitter/X"
+            >
+              <img
+                src={getFaviconUrl("x.com")}
+                alt="Twitter/X"
+                className="h-4 w-4"
+              />
+            </a>
+            <a
+              href="https://www.linkedin.com/in/nimrodharel999/"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-line/70 bg-card/80 px-3 py-2 hover:border-accent"
+              title="LinkedIn"
+              aria-label="LinkedIn"
+            >
+              <img
+                src={getFaviconUrl("linkedin.com")}
+                alt="LinkedIn"
+                className="h-4 w-4"
+              />
+            </a>
+            <a
+              href="mailto:nimrodharel1@gmail.com?subject=In%20English%2C%20Please%20contact"
+              className="rounded-full border border-line/70 bg-card/80 px-3 py-2 hover:border-accent"
+              title="Email"
+              aria-label="Email"
+            >
+              <img
+                src="/icons/mail.svg"
+                alt="Email"
+                className="h-4 w-4"
+              />
+            </a>
+          </div>
           {REPO_URL ? (
             <a
               href={REPO_URL}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-line/70 bg-card/80 px-4 py-2 hover:border-accent"
+              className="rounded-full border border-line/70 bg-card/80 px-3 py-2 hover:border-accent"
+              title="GitHub"
+              aria-label="GitHub"
             >
-              Git repo
+              <img
+                src={getFaviconUrl("github.com")}
+                alt="GitHub"
+                className="h-4 w-4"
+              />
             </a>
           ) : null}
         </footer>
